@@ -9,13 +9,31 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
 import dev.lgawin.sandbox.wifi.ui.theme.WifiSandboxTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +58,7 @@ class MainActivity : ComponentActivity() {
                 controlPort = 7236
                 maxThroughput = 50
             }
-            p2p.setWfdInfo(channel, wfdInfo, object : WifiP2pManager.ActionListener{
+            p2p.setWfdInfo(channel, wfdInfo, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
                     Log.d("gawluk", "setWfdInfo: onSuccess")
                 }
@@ -57,7 +75,7 @@ class MainActivity : ComponentActivity() {
 
 //            openControlPortOnWifiDirect()
 
-            p2p.startListening(channel, object : WifiP2pManager.ActionListener{
+            p2p.startListening(channel, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
                     Log.d("gawluk", "startListening: onSuccess")
                 }
@@ -75,11 +93,33 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             WifiSandboxTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize()
+                    ) {
+                        Column(
+                            modifier = Modifier.wrapContentSize(),
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            val displayName by wifiDisplayName.collectAsState()
+                            Greeting(name = getString(R.string.app_name))
+                            Spacer(modifier = Modifier.height(30.dp))
+                            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.headlineMedium) {
+                                Text(text = "Wifi p2p supported? ${wifiP2pManager != null}")
+                                Text(
+                                    text = buildAnnotatedString {
+                                        append("display name: ")
+                                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                            append(displayName)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -98,7 +138,8 @@ private fun dumpError(reason: Int): String = when (reason) {
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
         text = "Hello $name!",
-        modifier = modifier
+        modifier = modifier,
+        style = MaterialTheme.typography.headlineLarge,
     )
 }
 
