@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -111,48 +112,28 @@ class MainActivity : ComponentActivity() {
 
                             Greeting(name = getString(R.string.app_name))
                             Spacer(modifier = Modifier.height(30.dp))
+
                             CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.headlineMedium) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                ) {
-                                    IconButton(
-                                        onClick = { viewModel.updateDeviceInfo() },
-                                        modifier = Modifier.minimumInteractiveComponentSize(),
-                                    ) {
-                                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
-                                    }
-                                    Text(
-                                        text = buildAnnotatedString {
-                                            append("display name: ")
-                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                                append(displayName)
-                                            }
-                                        }
-                                    )
+                                Text("Peers:")
+                                Button(onClick = { viewModel.discoverPeers() }) {
+                                    Text("Discover peers")
                                 }
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                ) {
-                                    Checkbox(
-                                        checked = isDisplayEnabled,
-                                        onCheckedChange = { viewModel.setWifiDisplayEnabled(it) }
-                                    )
-                                    Text("Is display enabled?")
-                                    if (isDisplayEnabled) {
-                                        Button(onClick = { viewModel.startListening() }) {
-                                            Text("Start listening")
-                                        }
-                                    }
-                                }
+                                Text("Display:")
+                                DisplayInfo(
+                                    displayName,
+                                    isDisplayEnabled,
+                                    onRefreshClick = { viewModel.updateDeviceInfo() },
+                                    onWifiEnabledChange = { viewModel.setWifiDisplayEnabled(it) },
+                                    onStartListeningClick = { viewModel.startListening() },
+                                )
                                 Text("Logs (${logs.size}):")
                             }
+
                             LogsPane(
                                 logs,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .fillMaxWidth()
+                                    .fillMaxWidth(),
                             )
                         }
                     }
@@ -161,6 +142,52 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+}
+
+@Composable
+private fun ColumnScope.DisplayInfo(
+    displayName: String,
+    isDisplayEnabled: Boolean,
+    onRefreshClick: () -> Unit,
+    onWifiEnabledChange: (Boolean) -> Unit,
+    onStartListeningClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        IconButton(
+            onClick = onRefreshClick,
+            modifier = Modifier.minimumInteractiveComponentSize(),
+        ) {
+            Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
+        }
+        Text(
+            text = buildAnnotatedString {
+                append("display name: ")
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                    append(displayName)
+                }
+            }
+        )
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Checkbox(
+            checked = isDisplayEnabled,
+            onCheckedChange = onWifiEnabledChange
+        )
+        Text("Is display enabled?")
+        if (isDisplayEnabled) {
+            Button(onClick = onStartListeningClick) {
+                Text("Start listening")
+            }
+        }
+    }
 }
 
 @Composable

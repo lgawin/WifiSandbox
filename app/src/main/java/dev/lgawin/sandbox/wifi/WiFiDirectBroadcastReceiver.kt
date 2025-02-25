@@ -10,11 +10,14 @@ import android.net.wifi.p2p.WifiP2pDeviceList
 import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pInfo
 import android.net.wifi.p2p.WifiP2pManager
+import android.net.wifi.p2p.WifiP2pManager.EXTRA_DISCOVERY_STATE
 import android.net.wifi.p2p.WifiP2pManager.EXTRA_NETWORK_INFO
 import android.net.wifi.p2p.WifiP2pManager.EXTRA_P2P_DEVICE_LIST
+import android.net.wifi.p2p.WifiP2pManager.EXTRA_WIFI_P2P_DEVICE
 import android.net.wifi.p2p.WifiP2pManager.EXTRA_WIFI_P2P_GROUP
 import android.net.wifi.p2p.WifiP2pManager.EXTRA_WIFI_P2P_INFO
 import android.net.wifi.p2p.WifiP2pManager.EXTRA_WIFI_STATE
+import android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION
 import android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION
 import android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION
 import android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION
@@ -63,6 +66,16 @@ class WiFiDirectBroadcastReceiver(private val logger: Logger = LogcatLogger("gaw
                     "p2pInfo=$p2pInfo\nnetworkInfo=$networkInfo\np2pGroup=$p2pGroup"
                 )
             }
+
+            WIFI_P2P_DISCOVERY_CHANGED_ACTION -> {
+                val state = intent.getIntExtra(EXTRA_DISCOVERY_STATE, WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
+                logger.debug("WIFI_P2P_DISCOVERY_CHANGED_ACTION", dumpWifiP2pDiscoveryState(state))
+            }
+
+            WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> {
+                val p2pDevice = intent.getParcelableExtra(EXTRA_WIFI_P2P_DEVICE, WifiP2pDevice::class.java)
+                logger.debug("WIFI_P2P_THIS_DEVICE_CHANGED_ACTION", p2pDevice.toString())
+            }
         }
     }
 
@@ -72,6 +85,7 @@ class WiFiDirectBroadcastReceiver(private val logger: Logger = LogcatLogger("gaw
             addAction(WIFI_P2P_CONNECTION_CHANGED_ACTION)
             addAction(WIFI_P2P_PEERS_CHANGED_ACTION)
             addAction(WIFI_P2P_DISCOVERY_CHANGED_ACTION)
+            addAction(WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)
         }
     }
 }
@@ -92,8 +106,14 @@ fun WiFiDirectBroadcastReceiver.observeIn(context: Context): Flow<WifiDirectEven
     }
 }
 
-private fun dumpWifiP2pState(wifiP2pState: Int): String = when (wifiP2pState) {
+private fun dumpWifiP2pState(state: Int): String = when (state) {
     WifiP2pManager.WIFI_P2P_STATE_ENABLED -> "WIFI_P2P_STATE_ENABLED"
     WifiP2pManager.WIFI_P2P_STATE_DISABLED -> "WIFI_P2P_STATE_DISABLED"
-    else -> throw IllegalArgumentException("unknown state: $wifiP2pState")
+    else -> throw IllegalArgumentException("unknown state: $state")
+}
+
+private fun dumpWifiP2pDiscoveryState(state: Int): String = when (state) {
+    WifiP2pManager.WIFI_P2P_DISCOVERY_STARTED -> "WIFI_P2P_DISCOVERY_STARTED"
+    WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED -> "WIFI_P2P_DISCOVERY_STOPPED"
+    else -> throw IllegalArgumentException("unknown state: $state")
 }

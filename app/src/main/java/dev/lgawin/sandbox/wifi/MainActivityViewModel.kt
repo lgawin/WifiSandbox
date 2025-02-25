@@ -71,8 +71,6 @@ class MainActivityViewModel(
                 isEnabled = true
                 deviceType = WifiP2pWfdInfo.DEVICE_TYPE_PRIMARY_SINK
                 isSessionAvailable = true
-                controlPort = 7236
-                maxThroughput = 50
             }
         }
         try {
@@ -90,6 +88,13 @@ class MainActivityViewModel(
         wifiP2pManager.startListening(
             channel,
             wifiP2pActionListener().withLogging(logger = logger, "startListening"),
+        )
+    }
+
+    fun discoverPeers() {
+        wifiP2pManager.discoverPeers(
+            channel,
+            wifiP2pActionListener().withLogging(logger = logger, "discoverPeers"),
         )
     }
 
