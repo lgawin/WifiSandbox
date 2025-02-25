@@ -58,45 +58,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dev.lgawin.sandbox.wifi.ui.theme.WifiSandboxTheme
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.util.*
-
-data class LogInfo(
-    val level: LogLevel,
-    val tag: String,
-    val message: String? = null,
-    val throwable: Throwable? = null,
-) {
-    val timeStamp: Instant = Instant.now()
-    val id = UUID.randomUUID()
-
-    enum class LogLevel {
-        Debug,
-        Error,
-    }
-}
-
-data class LogInfoEntity(
-    val id: UUID,
-    val time: String,
-    val level: String,
-    val tag: String,
-    val message: String?,
-    val stackTrace: String? = null,
-)
-
-@Suppress("FunctionName")
-fun LogsRepositoryLogger(logsRepository: LogsRepository, additionalLogger: Logger? = null) = object : Logger {
-    override fun debug(tag: String, message: String) {
-        logsRepository.append(LogInfo(LogInfo.LogLevel.Debug, tag, message = message))
-        additionalLogger?.debug(tag, message)
-    }
-
-    override fun error(tag: String, throwable: Throwable) {
-        logsRepository.append(LogInfo(LogInfo.LogLevel.Error, tag, throwable = throwable))
-        additionalLogger?.error(tag, throwable)
-    }
-}
 
 class MainActivity : ComponentActivity() {
 
