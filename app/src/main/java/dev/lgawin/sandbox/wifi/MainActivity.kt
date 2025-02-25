@@ -126,7 +126,17 @@ class MainActivity : ComponentActivity() {
                                     onWifiEnabledChange = { viewModel.setWifiDisplayEnabled(it) },
                                     onStartListeningClick = { viewModel.startListening() },
                                 )
-                                Text("Logs (${logs.size}):")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                ) {
+                                    Text("Logs (${logs.size}):")
+                                    if (logs.isNotEmpty()) {
+                                        Button(onClick = { logsRepository.clear() }) {
+                                            Text("Clear")
+                                        }
+                                    }
+                                }
                             }
 
                             LogsPane(

@@ -10,6 +10,7 @@ import java.util.*
 interface LogsRepository {
     val logs: StateFlow<List<LogInfoEntity>>
     fun append(logInfo: LogInfo)
+    fun clear()
 }
 
 class DefaultLogsRepository : LogsRepository {
@@ -18,6 +19,10 @@ class DefaultLogsRepository : LogsRepository {
 
     override fun append(logInfo: LogInfo) {
         _logs.update { it.plus(logInfo.toEntity()) }
+    }
+
+    override fun clear() {
+        _logs.value = emptyList()
     }
 }
 
