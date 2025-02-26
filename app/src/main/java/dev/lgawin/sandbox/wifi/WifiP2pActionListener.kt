@@ -1,6 +1,8 @@
 package dev.lgawin.sandbox.wifi
 
 import android.net.wifi.p2p.WifiP2pManager
+import dev.lgawin.logger.LogcatLogger
+import dev.lgawin.logger.Logger
 
 private class DebuggingActionListener(
     private val logger: Logger,
@@ -40,13 +42,6 @@ fun wifiP2pActionListener(onSuccess: () -> Unit = {}, onFailure: (Int) -> Unit =
 fun WifiP2pActionListener.withLogging(logger: Logger, operationName: String): WifiP2pManager.ActionListener =
     DebuggingActionListener(
         logger = logger,
-        operation = operationName,
-        wrappedListener = this,
-    )
-
-fun WifiP2pActionListener.withLogging(operationName: String): WifiP2pManager.ActionListener =
-    DebuggingActionListener(
-        logger = LogcatLogger(tag = "DebuggingActionListener"),
         operation = operationName,
         wrappedListener = this,
     )

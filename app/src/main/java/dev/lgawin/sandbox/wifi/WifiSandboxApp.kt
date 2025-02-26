@@ -2,6 +2,8 @@ package dev.lgawin.sandbox.wifi
 
 import android.app.Application
 import android.content.Context
+import dev.lgawin.logger.DefaultLogsRepository
+import dev.lgawin.logger.LogsRepository
 
 class WifiSandboxApp : Application() {
 

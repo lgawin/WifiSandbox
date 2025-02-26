@@ -57,6 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import dev.lgawin.logger.LogInfoEntity
+import dev.lgawin.logger.LogcatLogger
+import dev.lgawin.logger.LogsRepositoryLogger
 import dev.lgawin.sandbox.wifi.ui.theme.WifiSandboxTheme
 import kotlinx.coroutines.launch
 import java.util.*

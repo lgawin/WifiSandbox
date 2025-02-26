@@ -13,6 +13,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import dev.lgawin.logger.LogcatLogger
+import dev.lgawin.logger.Logger
+import dev.lgawin.logger.LogsRepositoryLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -27,10 +30,8 @@ class MainActivityViewModel(
 
     private val wifiDevice = MutableStateFlow<WifiDirectDevice?>(null)
     val wifiDisplayEnabled = wifiDevice
-//        .onEach { logger.debug("wifi device changed", "wifiDisplayEnabled") }
         .map { it?.wfdEnabled ?: false }
     val wifiDisplayName = wifiDevice
-//        .onEach { logger.debug("wifi device changed", "wifiDisplayName") }
         .map { it?.name ?: "" }
 
     private lateinit var channel: WifiP2pManager.Channel
@@ -80,7 +81,7 @@ class MainActivityViewModel(
                 wifiP2pActionListener(onSuccess = { updateDeviceInfo() }).withLogging(logger, "setWfdInfo"),
             )
         } catch (e: SecurityException) {
-            logger.error("setWfdInfo", e)
+            logger.error("setWfdInfo", throwable = e)
         }
     }
 
