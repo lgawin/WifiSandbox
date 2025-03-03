@@ -81,8 +81,6 @@ class MainActivity : ComponentActivity() {
         logger.debug("onCreate", "start")
         super.onCreate(savedInstanceState)
 
-        viewModel.init(context = this, looper = mainLooper)
-
         lifecycleScope.launch {
             val wifiDirectEventFlow = WiFiDirectBroadcastReceiver(logger = logger)
                 .observeIn(this@MainActivity)
@@ -92,6 +90,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        viewModel.init(context = this, looper = mainLooper)
         viewModel.updateDeviceInfo()
 
         enableEdgeToEdge()

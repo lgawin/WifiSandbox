@@ -48,7 +48,7 @@ class MainActivityViewModel(
             val device = WifiDirectDevice(
                 name = it.deviceName,
                 status = resolveStatus(it.status),
-                wfdEnabled = it.wfdInfo?.isEnabled ?: false,
+                wfdEnabled = it.wfdInfo?.isEnabled == true,
             )
             wifiDevice.emit(device)
             logger.debug("deviceInfo", "emitted [$device]")
@@ -66,7 +66,7 @@ class MainActivityViewModel(
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun setWifiDisplayEnabled(enabled: Boolean) {
-        logger.debug("setWifiDisplayEnabled", "?: $enabled")
+        logger.debug("setWifiDisplayEnabled", "enabled?: $enabled")
         val wfdInfo = WifiP2pWfdInfo().apply {
             if (enabled) {
                 isEnabled = true

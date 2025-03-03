@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 class WiFiDirectBroadcastReceiver(private val logger: Logger = LogcatLogger("gawluk:receiver")) : BroadcastReceiver() {
@@ -101,10 +102,13 @@ fun WiFiDirectBroadcastReceiver.observeIn(context: Context): Flow<WifiDirectEven
     val receiver = this@observeIn
     logger.debug("observe", "register receiver")
     context.registerReceiver(receiver, WiFiDirectBroadcastReceiver.INTENT_FILTER, Context.RECEIVER_NOT_EXPORTED)
-    receiver.events.onEach(::trySend)
+    val job = receiver.events
+        .onEach { trySend(it).isSuccess }
+        .launchIn(this)
     awaitClose {
         logger.debug("observe", "unregister receiver")
         context.unregisterReceiver(receiver)
+        job.cancel()
     }
 }
 
