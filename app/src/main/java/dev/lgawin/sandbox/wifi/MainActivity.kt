@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -117,6 +118,10 @@ class MainActivity : ComponentActivity() {
                     ) {
                         val nearbyWifiPermissionState =
                             rememberPermissionState(android.Manifest.permission.NEARBY_WIFI_DEVICES)
+
+                        LaunchedEffect(nearbyWifiPermissionState.status.isGranted) {
+                            viewModel.updateDeviceInfo()
+                        }
 
                         Column(
                             modifier = Modifier.wrapContentSize(),
