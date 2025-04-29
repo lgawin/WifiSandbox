@@ -1,7 +1,10 @@
 package dev.lgawin.sandbox.wifi
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -54,9 +57,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import dev.lgawin.logger.LogInfoEntity
 import dev.lgawin.logger.LogcatLogger
 import dev.lgawin.logger.LogsRepositoryLogger
@@ -64,8 +72,8 @@ import dev.lgawin.sandbox.wifi.ui.theme.WifiSandboxTheme
 import kotlinx.coroutines.launch
 import java.util.*
 
+@OptIn(ExperimentalPermissionsApi::class)
 class MainActivity : ComponentActivity() {
-
     private val viewModel by viewModels<MainActivityViewModel> { MainActivityViewModel.Factory }
 
     private val logsRepository by lazy { WifiSandboxApp.from(this).logsRepository }
@@ -76,35 +84,40 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private val preferences by lazy { getSharedPreferences("prefs", MODE_PRIVATE) }
+
+    private var goToSettings: Boolean
+        get() = preferences.getBoolean("goToSettings", false)
+        set(value) = preferences.edit(commit = true) { putBoolean("goToSettings", value) }
+
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         logger.debug("onCreate", "start")
         super.onCreate(savedInstanceState)
 
+        enableEdgeToEdge()
+
         lifecycleScope.launch {
-            val wifiDirectEventFlow = WiFiDirectBroadcastReceiver(logger = logger)
-                .observeIn(this@MainActivity)
+            val wifiDirectEventFlow =
+                WiFiDirectBroadcastReceiver(logger = logger).observeIn(this@MainActivity)
             lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                wifiDirectEventFlow.collect {
-                    logger.debug("event", it.toString())
-                }
+                wifiDirectEventFlow.collect { logger.debug("event", it.toString()) }
             }
         }
 
         viewModel.init(context = this, looper = mainLooper)
         viewModel.updateDeviceInfo()
 
-        enableEdgeToEdge()
         setContent {
             WifiSandboxTheme {
                 Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .padding(innerPadding)
-                            .padding(horizontal = 16.dp)
-                            .fillMaxSize()
+                        modifier = Modifier.padding(innerPadding).padding(horizontal = 16.dp).fillMaxSize(),
                     ) {
+                        val nearbyWifiPermissionState =
+                            rememberPermissionState(android.Manifest.permission.NEARBY_WIFI_DEVICES)
+
                         Column(
                             modifier = Modifier.wrapContentSize(),
                             verticalArrangement = Arrangement.Center,
@@ -116,19 +129,55 @@ class MainActivity : ComponentActivity() {
                             Greeting(name = getString(R.string.app_name))
                             Spacer(modifier = Modifier.height(30.dp))
 
-                            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.headlineMedium) {
-                                Text("Peers:")
-                                Button(onClick = { viewModel.discoverPeers() }) {
-                                    Text("Discover peers")
+                            CompositionLocalProvider(
+                                LocalTextStyle provides MaterialTheme.typography.headlineMedium,
+                            ) {
+                                if (nearbyWifiPermissionState.status.isGranted) {
+                                    Column {
+                                        Text("Peers:")
+                                        Button(onClick = { viewModel.discoverPeers() }) { Text("Discover peers") }
+                                        Text("Display:")
+                                        DisplayInfo(
+                                            displayName,
+                                            isDisplayEnabled,
+                                            onRefreshClick = { viewModel.updateDeviceInfo() },
+                                            onWifiEnabledChange = { viewModel.setWifiDisplayEnabled(it) },
+                                            onStartListeningClick = { viewModel.startListening() },
+                                        )
+                                    }
+                                } else {
+                                    val textToShow =
+                                        when {
+                                            nearbyWifiPermissionState.status.shouldShowRationale ->
+                                                "The NEARBY_WIFI_DEVICES is required for this app. " +
+                                                    "Please grant the permission."
+
+                                            goToSettings ->
+                                                "NEARBY_WIFI_DEVICES permission required for this feature to be available. " +
+                                                    "Go to settings and grant the permission"
+
+                                            else ->
+                                                "NEARBY_WIFI_DEVICES permission required for this feature to be available. " +
+                                                    "Please grant the permission"
+                                        }
+                                    Column(modifier = Modifier.padding(all = 16.dp)) {
+                                        Text(textToShow)
+                                        Button(
+                                            onClick = {
+                                                if (goToSettings) {
+                                                    goToSettings()
+                                                } else {
+                                                    nearbyWifiPermissionState.launchPermissionRequest()
+                                                    goToSettings = nearbyWifiPermissionState.status.shouldShowRationale
+                                                }
+                                            },
+                                        ) {
+                                            val buttonText =
+                                                if (goToSettings) "Go to settings" else "Request permission"
+                                            Text(buttonText)
+                                        }
+                                    }
                                 }
-                                Text("Display:")
-                                DisplayInfo(
-                                    displayName,
-                                    isDisplayEnabled,
-                                    onRefreshClick = { viewModel.updateDeviceInfo() },
-                                    onWifiEnabledChange = { viewModel.setWifiDisplayEnabled(it) },
-                                    onStartListeningClick = { viewModel.startListening() },
-                                )
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -155,6 +204,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun goToSettings() {
+        val intent =
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", packageName, null)
+            }
+        startActivity(intent)
+    }
 }
 
 @Composable
@@ -205,7 +261,7 @@ private fun ColumnScope.DisplayInfo(
 
 @Composable
 private fun LogsPane(logs: List<LogInfoEntity>, modifier: Modifier = Modifier) {
-    val collapsed = mutableStateListOf<UUID>()
+    val collapsed = remember { mutableStateListOf<UUID>() }
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(logs.reversed()) {
             LogsItem(
